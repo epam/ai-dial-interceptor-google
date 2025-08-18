@@ -1,0 +1,94 @@
+[project]
+name = "aidial-interceptors-sdk"
+version = "0.5.0rc"
+description = "Framework for creating interceptors for AI DIAL"
+authors = [{ name = "EPAM RAIL", email = "SpecialEPM-DIALDevTeam@epam.com" }]
+license = "Apache-2.0"
+readme = "README.md"
+keywords = ["ai"]
+classifiers = ["Topic :: Software Development :: Libraries :: Python Modules"]
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "fastapi (>=0.51,<1.0)",
+    "httpx (>=0.25.0,<1.0)",
+    "openai (>=1.32.0,<2.0)",
+    "aidial-sdk[telemetry] (==0.19.0)",
+]
+
+[project.urls]
+Homepage = "https://epam-rail.com"
+Documentation = "https://epam-rail.com/dial_api"
+Repository = "https://github.com/epam/ai-dial-interceptors-sdk"
+
+[project.scripts]
+clean = "scripts.clean:main"
+codegen = "scripts.codegen:main"
+
+[project.optional-dependencies]
+examples = [
+    "aiostream (==0.6.2)",
+    "pillow (==10.4.0)",
+    "numpy (==1.26.4)",
+    "spacy (==3.7.5)",
+    "langfuse (==2.60.2)",
+    "protobuf (==5.29.5)",
+    "google-cloud-dlp (==3.30.0)",
+    "tabulate",
+]
+
+[tool.poetry.group.test.dependencies]
+pytest = "7.4.0"
+pytest-asyncio = "0.21.1"
+pytest-dotenv = "0.5.2"
+python-dotenv = "1.0.0"
+
+[tool.poetry.group.lint.dependencies]
+pyright = "1.1.324"
+black = "24.3.0"
+isort = "5.12.0"
+autoflake = "2.2.0"
+flake8 = "6.0.0"
+
+[tool.poetry.group.dev.dependencies]
+nox = "2023.4.22"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "--asyncio-mode=auto --doctest-modules"
+testpaths = ["tests", "aidial_interceptors_sdk.examples"]
+filterwarnings = [
+    # muting warnings coming from opentelemetry package
+    "ignore::DeprecationWarning:opentelemetry.instrumentation.dependencies",
+]
+
+[tool.pyright]
+typeCheckingMode = "basic"
+reportUnusedVariable = "error"
+reportIncompatibleMethodOverride = "error"
+exclude = [".git", ".venv", ".nox", "**/__pycache__"]
+
+[tool.black]
+line-length = 80
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | \.nox
+  | \.__pycache__
+)/
+'''
+
+[tool.isort]
+line_length = 80
+profile = "black"
+
+[tool.autoflake]
+ignore_init_module_imports = true
+remove_all_unused_imports = true
+in_place = true
+recursive = true
+quiet = true
+exclude = ["\\.venv", "\\.nox"]
