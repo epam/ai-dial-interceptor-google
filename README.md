@@ -17,16 +17,16 @@ Model Armor relies on Google Cloud APIs that require billing and authentication.
 
 Add following variables to main:
 
-|Variable|Default|Description|
-|---|---|---|
-|GOOGLE_PROJECT|llm-prompts-guard|GCP project name|
-|GOOGLE_REGION|us-central1|GCP region|
-|GOOGLE_INSPECT_TEMPLATE|pii-advance|inspect template|
-|GOOGLE_DEIDENTIFY_TEMPLATE|pii-deidentify|PII deidentify template name|
-|GOOGLE_KMS_KEY_NAME|-|PATH to DLP key|
-|GOOGLE_KMS_WRAPPED_KEY|-|KMS wrapped key base64|
-|GOOGLE_SURROGATE_INFO_TYPE|PII_TOKEN|Surrogate token name in re-identify template|
-|GOOGLE_APPLICATION_CREDENTIALS|-|Local path to credentials file|
+|Variable|Description|
+|---|---|
+|GOOGLE_PROJECT|GCP project name|
+|GOOGLE_REGION|GCP region|
+|GOOGLE_INSPECT_TEMPLATE|inspect template|
+|GOOGLE_DEIDENTIFY_TEMPLATE|PII deidentify template name|
+|GOOGLE_KMS_KEY_NAME|PATH to DLP key|
+|GOOGLE_KMS_WRAPPED_KEY|KMS wrapped key base64|
+|GOOGLE_SURROGATE_INFO_TYPE|Surrogate token name in re-identify template|
+|GOOGLE_APPLICATION_CREDENTIALS|Local path to credentials file|
 
 ## 3.  Authenticate
 
