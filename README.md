@@ -2,15 +2,6 @@
 
 A step‑by‑step guide to spinning up **Google Cloud Model Armor** — complete with Compute Engine dependencies, **KMS encryption**, and four ready‑to‑use templates (**basic filter · inspect · de‑identify · re‑identify**) — using nothing but the **gcloud CLI**.
 
-1. **Prerequisites**
-2. **Environment Variables**
-3. **Authenticate** with a service‑account key.
-4. **Create** a new project & attach it to a **Billing Account**.
-5. **Enable** the Model Armor, Compute, and KMS APIs.
-6. **Create** four templates (basic filter, inspect, de‑id, re‑id).
-7. **Provision** a Cloud KMS key ring + key, generate an AES‑256 DEK, and **wrap** it.
-8. **Export** the wrapped key to `.env` (or Secret Manager).
-
 ## 1.  Prerequisites
 
 Model Armor relies on Google Cloud APIs that require billing and authentication. The service account is necessary to automate deployment and API calls.
