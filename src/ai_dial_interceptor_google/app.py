@@ -6,10 +6,8 @@ from .registry import INTERCEPTORS
 
 dial_url = get_env("DIAL_URL")
 
-
 async def client_factory():
     return get_http_client()
-
 
 app = create_app(
     dial_url=dial_url,

@@ -10,7 +10,6 @@ def transform_to_table(records: List[Dict[str, str]]) -> str:
     rows = [[rec.get(col, "") for col in headers] for rec in records]
     return tabulate(rows, headers=headers, tablefmt="github")
 
-
 def transform_to_table_by_schema(
     rows: Sequence[Mapping[str, Any]], schema: Sequence[str]
 ) -> str:
