@@ -30,14 +30,6 @@ dependencies = [
   "spacy==3.7.5",
   "aiostream"
 ]
-[project.optional-dependencies]
-examples = [
-  "aiostream",
-  "pillow",
-  "numpy",
-  "spacy",
-  "langfuse"
-]
 
 # Make the package runnable as: `python -m ai_dial_interceptor_google` or `aidial-google`
 [project.scripts]
@@ -50,10 +42,6 @@ Repository = "https://github.com/epam/ai-dial-interceptor-google"
 
 [tool.poetry]
 packages = [{ include = "ai_dial_interceptor_google", from = "src" }]
-
-[tool.pytest.ini_options]
-addopts = "--asyncio-mode=auto --doctest-modules"
-testpaths = ["tests"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
