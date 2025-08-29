@@ -1,5 +1,15 @@
 # Google Model Armor interceptor
 
+This interceptor streamlines work with Google Cloud DLP—handling PII detection, de‑identification, and re‑identification—while supporting asynchronous workflows. Blocking RPC calls are delegated to the event loop’s default executor, making the design well‑suited for modern async Python applications.
+
+## Key Capabilities:
+
+- PII Detection: Identifies sensitive information within text and images.
+- De-identification: Transforms sensitive data (e.g., masking, redacting, tokenizing) to protect privacy.
+- Re-identification (for tokenized data): Reverses the de-identification process for specific tokenized data, allowing controlled access to original PII when necessary
+- Asynchronous Operations: Integrates seamlessly into asyncio applications.
+
+
 A step‑by‑step guide to spinning up **Google Cloud Model Armor** — complete with Compute Engine dependencies, **KMS encryption**, and four ready‑to‑use templates (**basic filter · inspect · de‑identify · re‑identify**) — using nothing but the **gcloud CLI**.
 
 ## 1.  Prerequisites
@@ -27,6 +37,7 @@ Add following variables to main:
 |GOOGLE_KMS_WRAPPED_KEY|KMS wrapped key base64|
 |GOOGLE_SURROGATE_INFO_TYPE|Surrogate token name in re-identify template|
 |GOOGLE_APPLICATION_CREDENTIALS|Local path to credentials file|
+|DIAL_URL|URL where dial core is running|
 
 ## 3.  Authenticate
 
@@ -201,3 +212,41 @@ gcloud model-armor templates inspect-user-prompt \
   --template "$INSPECT_TEMPLATE_ID" \
   --user-prompt-data-text "Hi, my SSN is 123‑45‑6789"
 ```
+
+## 10.  Configuring the Interceptor in DIAL Core
+
+### 10.1  Enable the interceptor in DIAL Core
+
+Edit the config.json file located at:
+
+```bash
+$DIAL-CORE-SDK/dial-docker-compose/application/core/config.json
+```
+
+### 10.2  Declare the interceptor endpoint
+
+Add the interceptor under the interceptors section:
+
+```json
+"INTERCEPTOR_NAME": {
+  "endpoint": "http://INTERCEPTOR_HOST:INTERCEPTOR_PORT/openai/deployments/INTERCEPTOR_NAME/chat/completions"
+}
+```
+
+Replace:
+
+INTERCEPTOR_NAME → the name of your interceptor.
+
+INTERCEPTOR_HOST and INTERCEPTOR_PORT → the host and port where the interceptor service is running.
+
+### 10.3  Register the interceptor in the application section
+
+Include your interceptor in the application’s interceptor list:
+
+```json
+"interceptors": [
+  "google-ma-anonimyzer"
+]
+```
+
+This ensures that all requests pass through the interceptor before reaching the model.
