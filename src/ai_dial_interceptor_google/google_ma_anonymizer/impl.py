@@ -4,7 +4,7 @@ import re
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import unquote
-
+from functools import cached_property
 from aidial_sdk.chat_completion import Stage
 from aidial_sdk.chat_completion.chunks import ContentChunk
 from typing_extensions import override
@@ -14,7 +14,7 @@ from aidial_interceptors_sdk.chat_completion.element_path import ElementPath
 from aidial_interceptors_sdk.utils._env import get_env
 
 from .anonymizer import GCPModelArmorPromptsGuard
-from .transform_utils import transform_to_table_by_schema
+from .utils.markdown import to_markdown_table
 
 
 class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
@@ -24,7 +24,6 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
 
     original_response_stages: Dict[int, Stage] = {}
     content_buffers: Dict[int, str] = defaultdict(str)
-    guard: GCPModelArmorPromptsGuard = None
 
     def _init(self):
         project = get_env("GOOGLE_PROJECT")
@@ -45,7 +44,10 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
             "key_file": key_file,
             "surrogate_info_type": surrogate_info_type,
         }
-
+    @cached_property
+    def _guard(self) -> GCPModelArmorPromptsGuard:
+        params = self._init()
+        return GCPModelArmorPromptsGuard(**params)
     @override
     async def on_response_message(self, path, message: dict) -> list[dict]:
         c = message.get("content")
@@ -61,48 +63,41 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
         schema = ["text", "infoType", "obfuscated"]
         tables: List[str] = []
         content_blocks: List[Dict] = []
-
-        # Process attachments (remain as attachments, not content)
         attachments = message.get("custom_content", {}).get("attachments", [])
         if attachments:
             updated_attachments = []
             for attachment in attachments:
                 if url := attachment.get("url"):
                     binary: bytes = await self.dial_client.storage.download(url)
-                    result = await self._guard_instance().deidentify_image(
+                    result = await self._guard.deidentify_image(
                         os.path.basename(unquote(url)), binary
                     )
                     if result:
                         findings, image_b64 = self._split_findings_and_data(result)
-                        tables.append(transform_to_table_by_schema(findings, schema))
+                        tables.append(to_markdown_table(findings, schema))
                         attachment["url"] = f"data:{attachment.get('type', 'image/png')};base64,{image_b64}"
                 updated_attachments.append(attachment)
             message.setdefault("custom_content", {})["attachments"] = updated_attachments
-
-        # Process user text content
         raw_text = message.get("content") or ""
-        pii_matches = await self._guard_instance().get_sensitive_fields(raw_text)
-
+        pii_matches = await self._guard.get_sensitive_fields(raw_text)
         if pii_matches:
-            redacted = await self._guard_instance().deidentify(raw_text)
+            redacted = await self._guard.deidentify(raw_text)
             tokens = re.findall(r"PII_TOKEN(?:\(\d+\))?:[A-Za-z0-9+/=]+", redacted)
 
             for match_dict, token in zip(pii_matches, tokens):
                 match_dict["obfuscated"] = token
 
-            tables.append(transform_to_table_by_schema(pii_matches, schema))
+            tables.append(to_markdown_table(pii_matches, schema))
             content_blocks.append({"type": "text", "text": redacted})
         elif raw_text:
             content_blocks.append({"type": "text", "text": raw_text})
-
-        # Finalize anonymized table
         if tables:
             self.anonymized_request = "\n\n-----\n\n".join(tables)
 
         return {
             "role": "user",
             "content": content_blocks,
-            "custom_content": message.get("custom_content")  # keep attachments separate
+            "custom_content": message.get("custom_content")
         }
 
     @override
@@ -160,18 +155,11 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
                 if content := self.content_buffers[choice_idx]:
                     stage.append_content(content)
                 stage.close()
-        self.full_response = await self._guard_instance().reidentify(
+        self.full_response = await self._guard.reidentify(
             self.full_response
         )
         self.send_chunk(ContentChunk(self.full_response, 0))
         self.full_response = ""
-
-    def _guard_instance(self) -> GCPModelArmorPromptsGuard:
-        if self.guard is None:
-            params = self._init()
-            self.guard = GCPModelArmorPromptsGuard(**params)
-
-        return self.guard
 
     def _split_findings_and_data(
         self, items: List[Dict]

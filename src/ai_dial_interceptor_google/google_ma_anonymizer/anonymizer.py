@@ -74,7 +74,7 @@ class GCPModelArmorPromptsGuard:
             raise GuardError(str(exc)) from exc
 
     async def deidentify(self, text: str) -> str:
-        if not text.strip():  # handles None, "", and whitespace-only
+        if not text.strip():
             return ""
         req = {
             "parent": self.parent,
@@ -86,7 +86,7 @@ class GCPModelArmorPromptsGuard:
         return resp.item.value
 
     async def reidentify(self, text: str) -> str:
-        if not text.strip():  # handles None, "", and whitespace-only
+        if not text.strip():
             return ""
         crypto_cfg = dlp_v2.CryptoDeterministicConfig(
             crypto_key=dlp_v2.CryptoKey(
@@ -129,7 +129,7 @@ class GCPModelArmorPromptsGuard:
         return resp.item.value
 
     async def get_sensitive_fields(self, text: str) -> List[dict]:
-        if not text.strip():  # handles None, "", and whitespace-only
+        if not text.strip():
             return []
         req = {
             "parent": self.parent,
@@ -154,25 +154,20 @@ class GCPModelArmorPromptsGuard:
         if info_types is not None:
             for info_type in info_types:
                 image_redaction_configs.append({"info_type": info_type})
-        # Construct the configuration dictionary. Keys which are None may
-        # optionally be omitted entirely.
         inspect_config = {
             "min_likelihood": "LIKELY",
             "info_types": info_types,
             "include_quote": True,
         }
-        # If mime_type is not specified, guess it from the filename.
-        # if mime_type is None:
         mime_guess = mimetypes.MimeTypes().guess_type(file_name)
         mime_type = mime_guess[0] or "application/octet-stream"
         supported_content_types = {
-            None: 0,  # "Unspecified" or BYTES_TYPE_UNSPECIFIED
-            "image/jpeg": 1,  # IMAGE_JPEG
-            "image/bmp": 2,  # IMAGE_BMP
-            "image/png": 3,  # IMAGE_PNG
-            "image/svg": 4,  # IMAGE_SVG - Adjusted to "image/svg+xml" for correct MIME type
-            # Note: No specific MIME type for general "image", mapping to IMAGE for any image type not specified
-            "image": 6,  # IMAGE - Any image type
+            None: 0,
+            "image/jpeg": 1,
+            "image/bmp": 2,
+            "image/png": 3,
+            "image/svg": 4,
+            "image": 6,
         }
         content_type_index = supported_content_types.get(mime_type, 0)
         if mime_type not in supported_content_types:
@@ -208,12 +203,3 @@ class GCPModelArmorPromptsGuard:
         if transport and hasattr(transport, "close"):
             transport.close()
 
-    # async‐context support
-    async def __aenter__(self) -> "GCPModelArmorPromptsGuard":
-
-        return self
-
-    async def __aexit__(self, exc_type, exc, tb) -> Optional[bool]:
-        await self.close()
-
-        return None
