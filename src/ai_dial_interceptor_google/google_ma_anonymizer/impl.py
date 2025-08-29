@@ -58,59 +58,52 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
     async def on_request_message(
         self, path: str, message: dict
     ) -> Dict[str, List[dict]]:
-
         schema = ["text", "infoType", "obfuscated"]
         tables: List[str] = []
         content_blocks: List[Dict] = []
 
-        attachment = message.get("custom_content", {}).get("attachments", [{}])[
-            0
-        ]
-        if url := attachment.get("url"):
-            binary: bytes = await self.dial_client.storage.download(url)
+        # Process attachments (remain as attachments, not content)
+        attachments = message.get("custom_content", {}).get("attachments", [])
+        if attachments:
+            updated_attachments = []
+            for attachment in attachments:
+                if url := attachment.get("url"):
+                    binary: bytes = await self.dial_client.storage.download(url)
+                    result = await self._guard_instance().deidentify_image(
+                        os.path.basename(unquote(url)), binary
+                    )
+                    if result:
+                        findings, image_b64 = self._split_findings_and_data(result)
+                        tables.append(transform_to_table_by_schema(findings, schema))
+                        attachment["url"] = f"data:{attachment.get('type', 'image/png')};base64,{image_b64}"
+                updated_attachments.append(attachment)
+            message.setdefault("custom_content", {})["attachments"] = updated_attachments
 
-            # de-identify the image with Model Armor / your guard service
-            result = await self._guard_instance().deidentify_image(
-                os.path.basename(unquote(url)), binary
-            )
-
-            if result:
-                findings, image_b64 = self._split_findings_and_data(result)
-                tables.append(transform_to_table_by_schema(findings, schema))
-
-                mime = attachment.get("type", "image/png")  # default MIME
-                data_uri = f"data:{mime};base64,{image_b64}"
-                content_blocks.append(
-                    {"type": "image_url", "image_url": {"url": data_uri}}
-                )
-
-        raw_text = message.get("content", "")
-        pii_matches = await self._guard_instance().get_sensitive_fields(
-            raw_text
-        )
+        # Process user text content
+        raw_text = message.get("content") or ""
+        pii_matches = await self._guard_instance().get_sensitive_fields(raw_text)
 
         if pii_matches:
             redacted = await self._guard_instance().deidentify(raw_text)
+            tokens = re.findall(r"PII_TOKEN(?:\(\d+\))?:[A-Za-z0-9+/=]+", redacted)
 
-            # map each match → its PII_TOKEN replacement
-            tokens = re.findall(
-                r"PII_TOKEN(?:\(\d+\))?:[A-Za-z0-9+/=]+", redacted
-            )
             for match_dict, token in zip(pii_matches, tokens):
                 match_dict["obfuscated"] = token
 
             tables.append(transform_to_table_by_schema(pii_matches, schema))
-            text_to_send = redacted
-        else:
-            text_to_send = raw_text
+            content_blocks.append({"type": "text", "text": redacted})
+        elif raw_text:
+            content_blocks.append({"type": "text", "text": raw_text})
 
-        # push (redacted) text ahead of images for better model context
-        content_blocks.insert(0, {"type": "text", "text": text_to_send})
-
+        # Finalize anonymized table
         if tables:
             self.anonymized_request = "\n\n-----\n\n".join(tables)
-        ret = {"role": "user", "content": content_blocks}
-        return ret
+
+        return {
+            "role": "user",
+            "content": content_blocks,
+            "custom_content": message.get("custom_content")  # keep attachments separate
+        }
 
     @override
     async def on_request(self, request: dict) -> dict:
