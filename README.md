@@ -22,8 +22,6 @@ Model Armor relies on Google Cloud APIs that require billing and authentication.
 | **Service‑account JSON key**    | Project Owner  | Activate via `gcloud auth` |
 | **Billing Account**             | Billing Admin  | Needed for new project |
 
-
-
 #### 2. Environment Variables
 Add following variables to main [environment variables](#environment-variables)
 |Variable|Default|Description|
@@ -53,10 +51,11 @@ Without billing, the Model Armor API refuses to enable.
 
 ```bash
 # Create the project
-gcloud projects create "$PROJECT_ID"        --name "Model Armor Demo"
+gcloud projects create "$PROJECT_ID" \
+  --name="Model Armor Demo"
 
 # Link to a billing account
-gcloud billing projects link "$PROJECT_ID"        --billing-account "$BILLING_ACCOUNT_ID"
+gcloud billing projects link "$PROJECT_ID" \       --billing-account "$BILLING_ACCOUNT_ID"
 ```
 
 #### 5.  Enable Required APIs
@@ -115,7 +114,9 @@ cat > deidentify-config.json <<'EOF'
 }
 EOF
 
-gcloud model-armor templates create "$DEID_TEMPLATE_ID"        --location "$REGION"        --deidentify-config=@deidentify-config.json
+gcloud model-armor templates create "$DEID_TEMPLATE_ID" \
+  --location="$REGION" \
+  --deidentify-config=@deidentify-config.json
 ```
 
 #### 6.4  Re‑identify Template (surrogate tokens)
@@ -142,8 +143,6 @@ gcloud model-armor templates list --location "$LOCATION_ID"
 # Should list: basic‑guard, inspect‑guard, deid‑guard, reid‑guard
 ```
 
----
-
 #### 7.  Provision Cloud KMS
 
 ```bash
@@ -153,8 +152,6 @@ gcloud kms keyrings create "dlp-keyring" --location global --project "$PROJECT_I
 # Key
 gcloud kms keys create "dlp-key"        --location global        --keyring dlp-keyring        --purpose encryption        --project "$PROJECT_ID"
 ```
-
----
 
 #### 8.  Generate & Wrap a Data‑Encryption Key (DEK)
 
@@ -166,15 +163,19 @@ openssl rand -out ./aes_key.bin 32
 PLAINTEXT_KEY=$(base64 -i ./aes_key.bin)
 
 # Wrap using Cloud KMS
-gcloud kms encrypt        --location global        --keyring dlp-keyring        --key dlp-key        --plaintext-file <(echo "$PLAINTEXT_KEY")        --ciphertext-file wrapped_key.b64        --project "$PROJECT_ID"
+gcloud kms encrypt \
+  --location=global \
+  --keyring=dlp-keyring \
+  --key=dlp-key \
+  --plaintext-file=<(echo "$PLAINTEXT_KEY") \
+  --ciphertext-file=wrapped_key.b64 \
+  --project="$PROJECT_ID"
 
 export WRAPPED_KEY=$(cat wrapped_key.b64)
 
 # Persist to env
 printf "\nWRAPPED_KEY=%s\n" "$WRAPPED_KEY" >> .env
 ```
-
----
 
 #### 9.  Validate
 
@@ -183,5 +184,8 @@ printf "\nWRAPPED_KEY=%s\n" "$WRAPPED_KEY" >> .env
 gcloud model-armor templates list --location "$REGION"
 
 # Dry‑run an inspect call
-gcloud model-armor templates inspect-user-prompt        --location "$REGION"        --template "$INSPECT_TEMPLATE_ID"        --user-prompt-data-text "Hi, my SSN is 123‑45‑6789"
+gcloud model-armor templates inspect-user-prompt \
+  --location "$REGION" \
+  --template "$INSPECT_TEMPLATE_ID" \
+  --user-prompt-data-text "Hi, my SSN is 123‑45‑6789"
 ```
