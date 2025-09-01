@@ -11,7 +11,6 @@ from typing_extensions import override
 
 from aidial_interceptors_sdk.chat_completion import ChatCompletionInterceptor
 from aidial_interceptors_sdk.chat_completion.element_path import ElementPath
-from aidial_interceptors_sdk.utils._env import get_env
 
 from .anonymizer import GCPModelArmorPromptsGuard
 from .utils.markdown import to_markdown_table
@@ -25,29 +24,10 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
     original_response_stages: Dict[int, Stage] = {}
     content_buffers: Dict[int, str] = defaultdict(str)
 
-    def _init(self):
-        project = get_env("GOOGLE_PROJECT")
-        region = get_env("GOOGLE_REGION")
-        inspect_template = get_env("GOOGLE_INSPECT_TEMPLATE")
-        deidentify_template = get_env("GOOGLE_DEIDENTIFY_TEMPLATE")
-        kms_key_name = get_env("GOOGLE_KMS_KEY_NAME")
-        wrapped_key = base64.b64decode(get_env("GOOGLE_KMS_WRAPPED_KEY"))
-        key_file = get_env("GOOGLE_APPLICATION_CREDENTIALS")
-        surrogate_info_type = get_env("GOOGLE_SURROGATE_INFO_TYPE")
-        return {
-            "project": project,
-            "region": region,
-            "inspect_template": inspect_template,
-            "deidentify_template": deidentify_template,
-            "kms_key_name": kms_key_name,
-            "wrapped_key": wrapped_key,
-            "key_file": key_file,
-            "surrogate_info_type": surrogate_info_type,
-        }
     @cached_property
     def _guard(self) -> GCPModelArmorPromptsGuard:
-        params = self._init()
-        return GCPModelArmorPromptsGuard(**params)
+        return GCPModelArmorPromptsGuard.create()
+
     @override
     async def on_response_message(self, path, message: dict) -> list[dict]:
         c = message.get("content")
@@ -70,7 +50,7 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
                 if url := attachment.get("url"):
                     binary: bytes = await self.dial_client.storage.download(url)
                     result = await self._guard.deidentify_image(
-                        os.path.basename(unquote(url)), binary
+                        url, binary
                     )
                     if result:
                         findings, image_b64 = self._split_findings_and_data(result)
