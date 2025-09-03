@@ -39,7 +39,7 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
     ) -> Dict[str, List[dict]]:
         schema = ["text", "infoType", "obfuscated"]
         tables: List[str] = []
-        content_blocks: List[Dict] = []
+        content_parts: List[Dict] = []
         attachments = message.get("custom_content", {}).get("attachments", [])
         if attachments:
             updated_attachments = []
@@ -67,15 +67,15 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
                 match_dict["obfuscated"] = token
 
             tables.append(to_markdown_table(pii_matches, schema))
-            content_blocks.append({"type": "text", "text": redacted})
+            content_parts.append({"type": "text", "text": redacted})
         elif raw_text:
-            content_blocks.append({"type": "text", "text": raw_text})
+            content_parts.append({"type": "text", "text": raw_text})
         if tables:
             self.anonymized_request = "\n\n-----\n\n".join(tables)
 
         return {
             "role": "user",
-            "content": content_blocks,
+            "content": content_parts,
             "custom_content": message.get("custom_content"),
         }
 

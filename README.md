@@ -227,16 +227,10 @@ $DIAL-CORE-SDK/dial-docker-compose/application/core/config.json
 Add the interceptor under the interceptors section:
 
 ```json
-"INTERCEPTOR_NAME": {
-  "endpoint": "http://INTERCEPTOR_HOST:INTERCEPTOR_PORT/openai/deployments/INTERCEPTOR_NAME/chat/completions"
+"google-ma-anonymizer": {
+  "endpoint": "http://INTERCEPTOR_HOST:INTERCEPTOR_PORT/openai/deployments/google-ma-anonymizer/chat/completions"
 }
 ```
-
-Replace:
-
-INTERCEPTOR_NAME → the name of your interceptor.
-
-INTERCEPTOR_HOST and INTERCEPTOR_PORT → the host and port where the interceptor service is running.
 
 ### 10.3  Register the interceptor in the application section
 

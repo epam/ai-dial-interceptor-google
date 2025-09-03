@@ -17,6 +17,7 @@ class Interceptors(BaseModel):
     chat_completions: dict[str, Type[ChatCompletionInterceptor]] = {}
     embeddings: dict[str, Type[EmbeddingsInterceptor]] = {}
 
+
 INTERCEPTORS: Interceptors = Interceptors(
     chat_completions={
         "google-ma-anonymizer": GoogleModelArmorAnonymizerInterceptor,

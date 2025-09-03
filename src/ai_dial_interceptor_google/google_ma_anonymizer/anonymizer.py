@@ -5,13 +5,16 @@ import base64
 import logging
 import mimetypes
 from functools import cached_property
-from typing import Any, Callable, List, Optional
+from typing import Callable, List, ParamSpec, TypeVar
 
 from aidial_interceptors_sdk.utils._env import get_env
 from google.api_core.exceptions import GoogleAPIError
 from google.auth import default as adc_default
 from google.cloud import dlp_v2
 from google.oauth2 import service_account
+
+P = ParamSpec("P")
+R = TypeVar("R")
 
 _LOG = logging.getLogger("gcp.guard")
 
@@ -84,7 +87,7 @@ class GCPModelArmorPromptsGuard:
             return await asyncio.to_thread(func, *args, **kwargs)
         except GoogleAPIError as exc:
             _LOG.error("DLP call failed: %s", exc)
-            raise GuardError(str(exc)) from exc
+            raise RuntimeError(str(exc)) from exc
 
     async def deidentify(self, text: str) -> str:
         if not text.strip():
@@ -178,16 +181,16 @@ class GCPModelArmorPromptsGuard:
             "image/png": dlp_v2.ByteContentItem.BytesType.IMAGE_PNG,
             "image/svg": dlp_v2.ByteContentItem.BytesType.IMAGE_SVG,
         }
-        content_type_index = supported_content_types.get(
+        bytes_type = supported_content_types.get(
             mime_type, dlp_v2.ByteContentItem.BytesType.BYTES_TYPE_UNSPECIFIED
         )
         if mime_type not in supported_content_types:
             raise ValueError(
                 f"Unsupported image MIME type: {mime_type!r}. "
-                f"Supported types: {', '.join(k for k in supported_content_types if k)}"
+                f"Supported types: {', '.join(supported_content_types)}"
             )
         byte_item = dlp_v2.ByteContentItem(
-            type_=content_type_index,
+            type_=bytes_type,
             data=data,
         )
 
@@ -207,8 +210,3 @@ class GCPModelArmorPromptsGuard:
         ]
         findings.append({"data": b64})
         return findings
-
-    async def close(self) -> None:
-        transport = getattr(self._client, "transport", None)
-        if transport and hasattr(transport, "close"):
-            transport.close()
