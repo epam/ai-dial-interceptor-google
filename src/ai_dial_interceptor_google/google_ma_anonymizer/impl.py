@@ -1,16 +1,13 @@
-import base64
-import os
 import re
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
-from urllib.parse import unquote
 from functools import cached_property
-from aidial_sdk.chat_completion import Stage
-from aidial_sdk.chat_completion.chunks import ContentChunk
-from typing_extensions import override
+from typing import Dict, List, Optional, Tuple
 
 from aidial_interceptors_sdk.chat_completion import ChatCompletionInterceptor
 from aidial_interceptors_sdk.chat_completion.element_path import ElementPath
+from aidial_sdk.chat_completion import Stage
+from aidial_sdk.chat_completion.chunks import ContentChunk
+from typing_extensions import override
 
 from .anonymizer import GCPModelArmorPromptsGuard
 from .utils.markdown import to_markdown_table
@@ -49,15 +46,17 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
             for attachment in attachments:
                 if url := attachment.get("url"):
                     binary: bytes = await self.dial_client.storage.download(url)
-                    result = await self._guard.deidentify_image(
-                        url, binary
-                    )
+                    result = await self._guard.deidentify_image(url, binary)
                     if result:
                         findings, image_b64 = self._split_findings_and_data(result)
                         tables.append(to_markdown_table(findings, schema))
-                        attachment["url"] = f"data:{attachment.get('type', 'image/png')};base64,{image_b64}"
+                        attachment["url"] = (
+                            f"data:{attachment.get('type', 'image/png')};base64,{image_b64}"
+                        )
                 updated_attachments.append(attachment)
-            message.setdefault("custom_content", {})["attachments"] = updated_attachments
+            message.setdefault("custom_content", {})[
+                "attachments"
+            ] = updated_attachments
         raw_text = message.get("content") or ""
         pii_matches = await self._guard.get_sensitive_fields(raw_text)
         if pii_matches:
@@ -77,7 +76,7 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
         return {
             "role": "user",
             "content": content_blocks,
-            "custom_content": message.get("custom_content")
+            "custom_content": message.get("custom_content"),
         }
 
     @override
@@ -128,6 +127,7 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
             self.content_buffers[choice_idx] = buffer
 
         return choice
+
     @override
     async def on_stream_end(self) -> None:
         for choice_idx in range(self.request_n):
@@ -135,9 +135,7 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
                 if content := self.content_buffers[choice_idx]:
                     stage.append_content(content)
                 stage.close()
-        self.full_response = await self._guard.reidentify(
-            self.full_response
-        )
+        self.full_response = await self._guard.reidentify(self.full_response)
         self.send_chunk(ContentChunk(self.full_response, 0))
         self.full_response = ""
 
@@ -155,9 +153,7 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
 
         if "data" in items[0]:
             b64_str = items[0]["data"]
-            findings = [
-                {k: v for k, v in f.items() if k != "data"} for f in items
-            ]
+            findings = [{k: v for k, v in f.items() if k != "data"} for f in items]
             return findings, b64_str
 
         return items, None

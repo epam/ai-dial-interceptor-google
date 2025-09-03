@@ -105,7 +105,7 @@ cat > inspect-config.json <<'EOF'
 }
 EOF
 
-# Создаём template в Model Armor
+# Create template in Model Armor
 gcloud model-armor templates create "$INSPECT_TEMPLATE_ID" \
   --location "$REGION" \
   --inspect-config=@inspect-config.json

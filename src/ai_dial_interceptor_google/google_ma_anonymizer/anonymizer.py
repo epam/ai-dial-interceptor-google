@@ -7,12 +7,14 @@ import mimetypes
 from functools import cached_property
 from typing import Any, Callable, List, Optional
 
+from aidial_interceptors_sdk.utils._env import get_env
 from google.api_core.exceptions import GoogleAPIError
 from google.auth import default as adc_default
 from google.cloud import dlp_v2
 from google.oauth2 import service_account
-from aidial_interceptors_sdk.utils._env import get_env
+
 _LOG = logging.getLogger("gcp.guard")
+
 
 class GCPModelArmorPromptsGuard:
     """
@@ -61,6 +63,7 @@ class GCPModelArmorPromptsGuard:
             wrapped_key=get_env("GOOGLE_KMS_WRAPPED_KEY"),
             key_file=get_env("GOOGLE_APPLICATION_CREDENTIALS"),
         )
+
     @cached_property
     def _client(self) -> dlp_v2.DlpServiceClient:
         if self._key_file:
@@ -74,7 +77,9 @@ class GCPModelArmorPromptsGuard:
 
         return dlp_v2.DlpServiceClient(credentials=creds)
 
-    async def _io(self, func: Callable[P, R], /, *args: P.args, **kwargs: P.kwargs) -> R:
+    async def _io(
+        self, func: Callable[P, R], /, *args: P.args, **kwargs: P.kwargs
+    ) -> R:
         try:
             return await asyncio.to_thread(func, *args, **kwargs)
         except GoogleAPIError as exc:
@@ -109,9 +114,7 @@ class GCPModelArmorPromptsGuard:
             info_type_transformations=dlp_v2.InfoTypeTransformations(
                 transformations=[
                     dlp_v2.InfoTypeTransformations.InfoTypeTransformation(
-                        info_types=[
-                            dlp_v2.InfoType(name=self.surrogate_info_type)
-                        ],
+                        info_types=[dlp_v2.InfoType(name=self.surrogate_info_type)],
                         primitive_transformation=dlp_v2.PrimitiveTransformation(
                             crypto_deterministic_config=crypto_cfg
                         ),
@@ -175,7 +178,9 @@ class GCPModelArmorPromptsGuard:
             "image/png": dlp_v2.ByteContentItem.BytesType.IMAGE_PNG,
             "image/svg": dlp_v2.ByteContentItem.BytesType.IMAGE_SVG,
         }
-        content_type_index = supported_content_types.get(mime_type, dlp_v2.ByteContentItem.BytesType.BYTES_TYPE_UNSPECIFIED)
+        content_type_index = supported_content_types.get(
+            mime_type, dlp_v2.ByteContentItem.BytesType.BYTES_TYPE_UNSPECIFIED
+        )
         if mime_type not in supported_content_types:
             raise ValueError(
                 f"Unsupported image MIME type: {mime_type!r}. "
@@ -193,9 +198,7 @@ class GCPModelArmorPromptsGuard:
             include_findings=True,
             byte_item=byte_item,
         )
-        response = self._client.redact_image(
-            redact_image_request
-        )
+        response = self._client.redact_image(redact_image_request)
         b64 = base64.b64encode(response.redacted_image).decode()
 
         findings = [
@@ -209,4 +212,3 @@ class GCPModelArmorPromptsGuard:
         transport = getattr(self._client, "transport", None)
         if transport and hasattr(transport, "close"):
             transport.close()
-
