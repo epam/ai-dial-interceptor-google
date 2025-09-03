@@ -2,13 +2,12 @@
 
 This interceptor streamlines work with Google Cloud DLP—handling PII detection, de‑identification, and re‑identification—while supporting asynchronous workflows. Blocking RPC calls are delegated to the event loop’s default executor, making the design well‑suited for modern async Python applications.
 
-## Key Capabilities:
+## Key Capabilities
 
 - PII Detection: Identifies sensitive information within text and images.
 - De-identification: Transforms sensitive data (e.g., masking, redacting, tokenizing) to protect privacy.
 - Re-identification (for tokenized data): Reverses the de-identification process for specific tokenized data, allowing controlled access to original PII when necessary
 - Asynchronous Operations: Integrates seamlessly into asyncio applications.
-
 
 A step‑by‑step guide to spinning up **Google Cloud Model Armor** — complete with Compute Engine dependencies, **KMS encryption**, and four ready‑to‑use templates (**basic filter · inspect · de‑identify · re‑identify**) — using nothing but the **gcloud CLI**.
 
