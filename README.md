@@ -36,7 +36,7 @@ Add following variables to main:
 |GOOGLE_KMS_WRAPPED_KEY|KMS wrapped key base64|
 |GOOGLE_SURROGATE_INFO_TYPE|Surrogate token name in re-identify template|
 |GOOGLE_APPLICATION_CREDENTIALS|Local path to credentials file|
-|DIAL_URL|URL where dial core is running|
+|DIAL_URL|URL where [DIAL Core](https://github.com/epam/ai-dial-core/) is running|
 
 ## 3. Authenticate
 
