@@ -58,6 +58,9 @@ class GoogleModelArmorAnonymizerInterceptor(ChatCompletionInterceptor):
                 "attachments"
             ] = updated_attachments
         raw_text = message.get("content") or ""
+        if not isinstance(raw_text, str):
+            raise ValueError("Content parts aren't supported yet")
+
         pii_matches = await self._guard.get_sensitive_fields(raw_text)
         if pii_matches:
             redacted = await self._guard.deidentify(raw_text)
