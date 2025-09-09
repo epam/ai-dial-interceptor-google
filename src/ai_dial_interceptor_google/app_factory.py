@@ -4,14 +4,12 @@ from aidial_sdk import DIALApp
 from aidial_sdk.telemetry.types import TelemetryConfig
 
 from .google_ma_anonymizer.impl import GoogleModelArmorAnonymizerInterceptor
-from .registry import Interceptors
 
 
 def create_app(
     *,
     dial_url: str,
     client_factory: HTTPClientFactory,
-    interceptors: Interceptors,
 ) -> DIALApp:
     app = DIALApp(
         description="Google Model Armor Interceptor",

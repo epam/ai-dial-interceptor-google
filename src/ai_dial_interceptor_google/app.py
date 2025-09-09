@@ -3,8 +3,6 @@ from aidial_interceptors_sdk.utils._http_client import get_http_client
 
 from ai_dial_interceptor_google.app_factory import create_app
 
-from .registry import INTERCEPTORS
-
 dial_url = get_env("DIAL_URL")
 
 
@@ -15,5 +13,4 @@ async def client_factory():
 app = create_app(
     dial_url=dial_url,
     client_factory=client_factory,
-    interceptors=INTERCEPTORS,
 )
