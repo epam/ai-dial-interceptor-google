@@ -11,7 +11,7 @@ This interceptor streamlines work with Google Cloud DLP—handling PII detec
 
 A step‑by‑step guide to spinning up **Google Cloud Model Armor** — complete with Compute Engine dependencies, **KMS encryption**, and four ready‑to‑use templates (**basic filter · inspect · de‑identify · re‑identify**) — using nothing but the **gcloud CLI**.
 
-## 1.  Prerequisites
+## 1. Prerequisites
 
 Model Armor relies on Google Cloud APIs that require billing and authentication. The service account is necessary to automate deployment and API calls.
 
@@ -22,7 +22,7 @@ Model Armor relies on Google Cloud APIs that require billing and authentication.
 | **Service‑account JSON key**    | Project Owner  | Activate via `gcloud auth` |
 | **Billing Account**             | Billing Admin  | Needed for new project |
 
-## 2. Environment Variables
+## 2. Environment Variables
 
 Add following variables to main:
 
@@ -38,7 +38,7 @@ Add following variables to main:
 |GOOGLE_APPLICATION_CREDENTIALS|Local path to credentials file|
 |DIAL_URL|URL where dial core is running|
 
-## 3.  Authenticate
+## 3. Authenticate
 
 Activate the service account and set it as the active one
 
@@ -47,7 +47,7 @@ gcloud auth activate-service-account --key-file=./secret/xxx-key.json
 gcloud config set account "$(jq -r .client_email < ./secret/xxx-key.json)"
 ```
 
-## 4.  Create & Fund the Project
+## 4. Create & Fund the Project
 
 A project is the security + billing boundary for Model Armor.
 Without billing, the Model Armor API refuses to enable.
@@ -61,7 +61,7 @@ gcloud billing projects link "$PROJECT_ID" \
   --billing-account "$BILLING_ACCOUNT_ID"
 ```
 
-## 5.  Enable Required APIs
+## 5. Enable Required APIs
 
 ```bash
 # Point gcloud at the regional Model Armor endpoint
@@ -74,11 +74,11 @@ gcloud services enable modelarmor.googleapis.com  --project "$PROJECT_ID"
 gcloud services enable cloudkms.googleapis.com    --project "$PROJECT_ID"
 ```
 
-## 6.  Create Model Armor Templates
+## 6. Create Model Armor Templates
 
 Model Armor controls are template‑driven – each template is an immutable set of rules that the interceptor references by name.
 
-### 6.1  Basic Filter Template
+### 6.1 Basic Filter Template
 
 ```bash
 gcloud model-armor templates create "$BASIC_TEMPLATE_ID" \
@@ -86,7 +86,7 @@ gcloud model-armor templates create "$BASIC_TEMPLATE_ID" \
   --basic-config-filter-enforcement=enabled
 ```
 
-### 6.2  Inspect Template (custom infoTypes)
+### 6.2 Inspect Template (custom infoTypes)
 
 Adds structured findings so downstream logic can decide to redact, log, or allow.
 
@@ -110,7 +110,7 @@ gcloud model-armor templates create "$INSPECT_TEMPLATE_ID" \
   --inspect-config=@inspect-config.json
 ```
 
-### 6.3  De‑identify Template (strip findings)
+### 6.3 De‑identify Template (strip findings)
 
 De-identification templates specify the rules and methods for transforming sensitive data (e.g., PII, financial details) to protect privacy while still allowing for data analysis or model training.
 
@@ -132,7 +132,7 @@ gcloud model-armor templates create "$DEID_TEMPLATE_ID" \
   --deidentify-config=@deidentify-config.json
 ```
 
-### 6.4  Re‑identify Template (surrogate tokens)
+### 6.4 Re‑identify Template (surrogate tokens)
 
 Turns PII_TOKEN placeholders back into real data after the LLM responds.
 
@@ -152,14 +152,14 @@ gcloud model-armor templates create "$REID_TEMPLATE_ID" \
   --reidentify-config=@reidentify-config.json
 ```
 
-### 6.5  Verify
+### 6.5 Verify
 
 ```bash
 gcloud model-armor templates list --location "$LOCATION_ID"
 # Should list: basic‑guard, inspect‑guard, deid‑guard, reid‑guard
 ```
 
-## 7.  Provision Cloud KMS
+## 7. Provision Cloud KMS
 
 ```bash
 # Create a key ring
@@ -175,7 +175,7 @@ gcloud kms keys create "dlp-key" \
   --project "$PROJECT_ID"
 ```
 
-## 8.  Generate & Wrap a Data‑Encryption Key (DEK)
+## 8. Generate & Wrap a Data‑Encryption Key (DEK)
 
 ```bash
 # Generate 256‑bit AES key
@@ -199,7 +199,7 @@ export WRAPPED_KEY=$(cat wrapped_key.b64)
 printf "\nWRAPPED_KEY=%s\n" "$WRAPPED_KEY" >> .env
 ```
 
-## 9.  Validate
+## 9. Validate
 
 ```bash
 # List templates
@@ -212,9 +212,9 @@ gcloud model-armor templates inspect-user-prompt \
   --user-prompt-data-text "Hi, my SSN is 123‑45‑6789"
 ```
 
-## 10.  Configuring the Interceptor in DIAL Core
+## 10. Configuring the Interceptor in DIAL Core
 
-### 10.1  Enable the interceptor in DIAL Core
+### 10.1 Enable the interceptor in DIAL Core
 
 Edit the config.json file located at:
 
@@ -222,7 +222,7 @@ Edit the config.json file located at:
 $DIAL-CORE-SDK/dial-docker-compose/application/core/config.json
 ```
 
-### 10.2  Declare the interceptor endpoint
+### 10.2 Declare the interceptor endpoint
 
 Add the interceptor under the interceptors section:
 
@@ -232,7 +232,7 @@ Add the interceptor under the interceptors section:
 }
 ```
 
-### 10.3  Register the interceptor in the application section
+### 10.3 Register the interceptor in the application section
 
 Include your interceptor in the application’s interceptor list:
 
