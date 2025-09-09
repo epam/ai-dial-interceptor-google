@@ -214,32 +214,39 @@ gcloud model-armor templates inspect-user-prompt \
 
 ## 10. Configuring the Interceptor in DIAL Core
 
-### 10.1 Enable the interceptor in DIAL Core
-
 Edit the config.json file located at:
 
 ```bash
 $DIAL-CORE-SDK/dial-docker-compose/application/core/config.json
 ```
 
-### 10.2 Declare the interceptor endpoint
-
-Add the interceptor under the interceptors section:
+Add the Model Armor interceptor to the DIAL Core configuration and attach it to a model or an application:
 
 ```json
-"google-ma-anonymizer": {
-  "endpoint": "http://INTERCEPTOR_HOST:INTERCEPTOR_PORT/openai/deployments/google-ma-anonymizer/chat/completions"
+{
+  "interceptors": {
+    "google-model-armor-interceptor": {
+      "endpoint": "MODEL_ARMOR_INTERCEPTOR_ORIGIN/openai/deployments/google-ma-anonymizer/chat/completions"
+    }
+  },
+  "models": {
+    "my-dial-model": {
+      "type": "chat",
+      "endpoint": "...",
+      "interceptors": [
+        "google-model-armor-interceptor"
+      ]
+    }
+  },
+  "applications": {
+    "my-dial-application": {
+      "endpoint": "...",
+      "interceptors": [
+        "google-model-armor-interceptor"
+      ]
+    }
+  }
 }
-```
-
-### 10.3 Register the interceptor in the application section
-
-Include your interceptor in the application’s interceptor list:
-
-```json
-"interceptors": [
-  "google-ma-anonimyzer"
-]
 ```
 
 This ensures that all requests pass through the interceptor before reaching the model.
