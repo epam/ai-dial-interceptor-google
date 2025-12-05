@@ -1,4 +1,5 @@
-from aidial_interceptors_sdk.chat_completion import interceptor_to_chat_completion
+from aidial_interceptors_sdk.chat_completion import \
+    interceptor_to_chat_completion
 from aidial_interceptors_sdk.utils._http_client import HTTPClientFactory
 from aidial_sdk import DIALApp
 from aidial_sdk.telemetry.types import TelemetryConfig
