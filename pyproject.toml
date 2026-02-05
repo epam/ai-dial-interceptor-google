@@ -21,7 +21,7 @@ dependencies = [
   "aidial-sdk[telemetry]==0.21.0",
   "aidial-interceptors-sdk==0.5.0",
   "google-cloud-dlp==3.30.0",
-  "protobuf==5.29.5",
+  "protobuf==5.29.6",
   "tabulate>=0.9.0",
   "python-dotenv>=0.21.0",
   "uvicorn[standard]>=0.23.0,<1.0",
