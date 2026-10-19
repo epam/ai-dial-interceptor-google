@@ -1,3 +1,7 @@
+# This project is archived and no longer developed or maintained. 🧊
+
+This repository is no longer actively maintained and will remain available for reference purposes only.
+
 # Google Model Armor interceptor
 
 This interceptor streamlines work with Google Cloud DLP—handling PII detection, de‑identification, and re‑identification—while supporting asynchronous workflows. Blocking RPC calls are delegated to the event loop’s default executor, making the design well‑suited for modern async Python applications.
